@@ -109,6 +109,7 @@ class RTree
     float minRad = 100000;
     vector<pair<int,bool>> reinsertedLevel = {make_pair(0, false)};
 
+    //funcion que busca si el par booleano del nivel ya fue reinsertado
     bool wasReinserted(int level){
         for(auto &x: reinsertedLevel){
             if(x.first == level) return x.second;
@@ -116,12 +117,14 @@ class RTree
         return false;
     }
 
+    //despues de terminar un insert se setea todos los nodos como no visitados
     void resetBoolValues(){
         for(auto &x: reinsertedLevel){
             x.second = false;
         }
     }
 
+    //setea un nivel como reinsertado
     void setReinserted(int level, bool b){
         for(auto &x: reinsertedLevel){
             if(x.first == level) x.second = b;
