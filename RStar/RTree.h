@@ -131,6 +131,7 @@ class RTree
         }
     }
 
+    //suma los valores de cada split
     tuple <float, vector<Node*>, vector<Node*>> getSemSums(vector<Node*> auxSplit){
         float lowexsum = std::numeric_limits<float>::max();
         vector<Node*> s1, s2;
@@ -149,6 +150,8 @@ class RTree
         }
         return make_tuple(lowexsum, s1, s2);
     }
+    
+    //escoge el mejor eje en el cual dividir el nodo
     vector<Node*> chooseSplitAxis(vector<Node*> nodes){
         auto xsplit = nodes;
         auto ysplit = nodes;
@@ -201,7 +204,8 @@ class RTree
         }
         return ans;
     }
-
+    
+    //seleccionamos el indice en el que se hara el split
     pair<vector<Node*>, vector<Node*>> chooseSplitIndex(vector<Node*> nodes){
         std::vector<Node*> leftPart, rightPart;
         float minOverlap = std::numeric_limits<float>::max();
@@ -219,6 +223,8 @@ class RTree
         }
         return make_pair(leftPart, rightPart);
     }
+    
+    //separar entre semillas 
     void split(Node* seedOne, Node* seedTwo){
         std::vector<Node*> auxV = seedOne->children;
 
@@ -256,6 +262,7 @@ class RTree
             node->boundingBox.color = v->boundingBox.color = Color(Rand(0,255), Rand(0,255), Rand(0,255));
             return;
         }
+        //si el nodo no es root se verifica si no se ha realizado la reinsercion forzada
         if(!wasReinserted(level) && root->level != level){
             reInsert(node, level);
         }
@@ -274,6 +281,7 @@ class RTree
         }
     }
 
+    //funcion que calcula los hijos mas lejanos al centro de una caja y los vuelve a insertar en el mismo nivel
     void reInsert(Node* node, int level){
         setReinserted(level, true);
         vector<pair<Node*, double>> farNodes;
