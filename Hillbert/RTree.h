@@ -21,20 +21,25 @@ int Rand(T first, T last) {
     return dis(eng);
 }
 
+//funcion para ordenar por menor distancia
 static bool orderByLowestDistance(pair<Node*, double> p1, pair<Node*, double> p2){
     return p1.second < p2.second;
 }
+
+//funcion para ordenar por mayor distancia
 static bool orderByHighestDistance(pair<Node*, double> p1, pair<Node*, double> p2){
     return p1.second > p2.second;
 }
 
 
+//distancia entre dos bounding boxes
 static float distanceMBB(Vector2f p, MBB node){
     auto dx = max({node.topLeft.x - p.x, float(0), p.x - node.bottomRight.x});
     auto dy = max({node.topLeft.y - p.y, float(0), p.y - node.bottomRight.y});
     return sqrt(dx*dx + dy*dy);
 }
 
+//otra forma de comparar bounding boxes
 struct LessThanByMBB {
     bool operator()(Figure* f1, Figure*f2, Vector2f p) const
     {
@@ -44,12 +49,14 @@ struct LessThanByMBB {
     }
 };
 
+//comparar la distancia entre nodos
 struct compareNodes{
     bool operator()(pair<Node*, float> n1, pair<Node*, float> n2){
         return n1.second > n2.second;
     }
 };
 
+//escoger la menor suma entre ejes
 MBB pickLowerSum(vector<MBB> boxes){
     MBB temp;
     double sum = 0;
@@ -64,6 +71,7 @@ MBB pickLowerSum(vector<MBB> boxes){
     return temp;
 }
 
+//mayor suma entre ejes
 MBB pickHighestSum(vector<MBB> boxes){
     MBB temp;
     double sum = 0;
@@ -78,10 +86,12 @@ MBB pickHighestSum(vector<MBB> boxes){
     return temp;
 }
 
+//distancia entre dos puntos
 double getDistance(Vector2f p1, Vector2f p2){
     return sqrt((p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y)*(p2.y - p1.y) );
 }
 
+//ditancia entre un nodo y un punto
 float distanceNodePoint(Node* node, Vector2f p){
     MBB box = node->boundingBox;
     float centerX = (box.topRight.x - box.topLeft.x) / 2;
@@ -89,11 +99,14 @@ float distanceNodePoint(Node* node, Vector2f p){
     return sqrt((centerX - p.x)*(centerX - p.x) + (centerY - p.y) * (centerY - p.y));
 }
 
+//distancia entre un punto  una figura
 float distancePointFigure(Vector2f p, Node* node){
     auto dx = max({node->boundingBox.topLeft.x - p.x, float(0), p.x - node->boundingBox.bottomRight.x});
     auto dy = max({node->boundingBox.topLeft.y - p.y, float(0), p.y - node->boundingBox.bottomRight.y});
     return sqrt(dx*dx + dy*dy);
 }
+
+//union entre dos cajas
 MBB mergeBounds(std::vector<Node*> bounds){
     MBB res = bounds.front()->boundingBox;
     for(auto region: bounds){
@@ -102,6 +115,7 @@ MBB mergeBounds(std::vector<Node*> bounds){
     return res;
 }
 
+//funcion para insertar un elemento de forma ordenada a un vector 
 template <typename T, typename C>
 auto insertOrdered(std::vector<T>& vec, const T& element, C& callable) -> decltype(vec.begin()) {
     auto i = vec.begin();
@@ -113,19 +127,23 @@ auto insertOrdered(std::vector<T>& vec, const T& element, C& callable) -> declty
     return vec.insert(i, element);
 }
 
-
+//funcion para escoger el mejor candidato
 template <typename T, typename F, typename C>
 auto getFirst(std::vector<T>& vec, const F& to_find, C& callable) -> decltype(vec.begin()){
     return std::lower_bound(vec.begin(), vec.end(), to_find, callable);
 }
 
+//lambda para comprar los hilbert index entre dos nodos
 const auto compare  = [](Node* n1, Node* n2){
     return n1->gethIndex() < n2->gethIndex();
 };
+
+//lambda para comparar los hilbert index de dos nodos hojos
 const auto compareL  = [](leafNode* n1, leafNode* n2){
     return n1->gethIndex() < n2->gethIndex();
 };
 
+//ordenar por el valor del hindex
 const auto lessHIndex = [](Node* n, Vector2f& q){
     return n->gethIndex() < xy2d(q);
 };
@@ -136,6 +154,7 @@ class RTree
     float dk = 0;
     float minRad = 100000;
 
+    //split de los hijos entre dos semillas
     void split(Node* seedOne, Node* seedTwo){
         std::vector<Node*> auxV = seedOne->children;
         int mx = (int)auxV.size();
@@ -159,6 +178,7 @@ class RTree
         seedTwo->mergeBoundingBoxes();
     }
 
+    //actualizar el nodo en un insert o en un delete
     void adjustTree(std::vector<Node*>& vec, std::vector<Node*>::iterator q, std::vector<Node*>::iterator s, int d = 0){
         std::vector<Node*> auxVec;
         for(auto it = q; it != (s+1); ++it)
@@ -185,6 +205,7 @@ class RTree
         auxVec.clear();
     }
 
+    //manejar el overflow de un nodo
     void handleOverflow(Node* node){
         if(!node->father){
             Node* v = new Node();
@@ -218,6 +239,7 @@ class RTree
         }
     }
 
+    //escoger el mejor sub arbol
     Node* chooseSubTree(Node* node, Figure figure){
         float minPerimeter = std::numeric_limits<float>::max();
         auto ans = new Node();
@@ -232,7 +254,8 @@ class RTree
         }
         return ans;
     }
-
+    
+    //funcion auxiliar para insertar un nodo
     Node* insertRect(Node* node, Figure figure){
         if(node->isLeaf()){
             Node* auxNode = new leafNode(figure);
@@ -252,6 +275,7 @@ class RTree
         return node;
     }
 
+    //busqueda
     Node* search(Node* node, const Vector2f &p){
 
         if (node->isLeaf()) {
@@ -274,6 +298,7 @@ class RTree
         return nullptr;
     }
 
+    //eliminar
     void remove(Node* node, const Vector2f & p){
 
         Node* n = search(p);
@@ -307,6 +332,7 @@ class RTree
 
     }
 
+    //funcion para controlar cuando un nodo se queda con menos de m hijos
     void handleUnderflow(Node* node){
 
         if(node->father == nullptr){
@@ -352,6 +378,7 @@ class RTree
         }
     }
 
+    //funcion para actualizar el padre de hijos de algun nodo
     void update(Node* v) {
         v->mergeBoundingBoxes();
         if(v != root) {
@@ -359,6 +386,7 @@ class RTree
         }
     }
 
+    //actualizar hacia arriba
     void propagateUpwards(Node* node){
         while(node->father != nullptr){
             node->mergeBoundingBoxes();
@@ -399,7 +427,7 @@ public:
     }
 
 
-
+    //k vecinos cercanos visto en clases recorriendo el arbol
     template<typename cmp>
     void k_depthFirst(std::priority_queue<Figure , std::vector<Figure>, cmp> &pq, int &k, Node* node, Vector2f p){
         if(node->isLeaf()){
@@ -429,6 +457,7 @@ public:
         }
     }
 
+    //k vecinos cercanos 
     vector<Figure> depthFirst(Vector2f p, int k){
         std::vector<Figure> ans;
         auto cmp  = [&p](Figure f1, Figure f2){
@@ -447,6 +476,7 @@ public:
     }
 
 
+    //funcion para dibujar lineas a alguna figura
     void drawLinesToFoundFigures(vector<Figure> figures, RenderWindow& renderWindow, CircleShape circle){
         for (int i = 0; i < figures.size(); ++i)
         {
@@ -463,6 +493,7 @@ public:
         remove(root, p);
     }
 
+    //funcion que recorre el arbol por nivel y muestra las figuras en la gui
     void bfs(RenderWindow &renderWindow){
         queue<Node*> q;
         q.push(root);
